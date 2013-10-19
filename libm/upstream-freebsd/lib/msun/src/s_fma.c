@@ -238,8 +238,6 @@ fma(double x, double y, double z)
 		zs = copysign(DBL_MIN, zs);
 
 	fesetround(FE_TONEAREST);
-	/* work around clang bug 8100 */
-	volatile double vxs = xs;
 
 	/*
 	 * Basic approach for round-to-nearest:
@@ -249,7 +247,7 @@ fma(double x, double y, double z)
 	 *     adj = xy.lo + r.lo		(inexact; low bit is sticky)
 	 *     result = r.hi + adj		(correctly rounded)
 	 */
-	xy = dd_mul(vxs, ys);
+	xy = dd_mul(xs, ys);
 	r = dd_add(xy.hi, zs);
 
 	spread = ex + ey;
@@ -270,9 +268,7 @@ fma(double x, double y, double z)
 		 * rounding modes.
 		 */
 		fesetround(oround);
-		/* work around clang bug 8100 */
-		volatile double vrlo = r.lo;
-		adj = vrlo + xy.lo;
+		adj = r.lo + xy.lo;
 		return (ldexp(r.hi + adj, spread));
 	}
 

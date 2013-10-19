@@ -1,4 +1,4 @@
-/*	$OpenBSD: endian.h,v 1.17 2011/03/12 04:03:04 guenther Exp $	*/
+/*	$OpenBSD: endian.h,v 1.14 2005/12/13 00:35:23 millert Exp $	*/
 
 /*-
  * Copyright (c) 1997 Niklas Hallqvist.  All rights reserved.
@@ -24,28 +24,38 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _MACHINE_ENDIAN_H_
-#define _MACHINE_ENDIAN_H_
+#ifndef _I386_ENDIAN_H_
+#define _I386_ENDIAN_H_
 
 #ifdef __GNUC__
 
-#define	__swap32md(x) __statement({					\
+#if defined(_KERNEL) && !defined(I386_CPU)
+#define	__swap32md(x) ({						\
 	uint32_t __swap32md_x = (x);					\
 									\
-	__asm ("bswap %0" : "+r" (__swap32md_x));			\
+	__asm ("bswap %1" : "+r" (__swap32md_x));			\
 	__swap32md_x;							\
 })
+#else
+#define	__swap32md(x) ({						\
+	uint32_t __swap32md_x = (x);					\
+									\
+	__asm ("rorw $8, %w1; rorl $16, %1; rorw $8, %w1" :		\
+	    "+r" (__swap32md_x));					\
+	__swap32md_x;							\
+})
+#endif	/* _KERNEL && !I386_CPU */
 
-#define	__swap64md(x) __statement({					\
+#define	__swap64md(x) ({						\
 	uint64_t __swap64md_x = (x);					\
 									\
 	(uint64_t)__swap32md(__swap64md_x >> 32) |			\
 	    (uint64_t)__swap32md(__swap64md_x & 0xffffffff) << 32;	\
 })
-#define	__swap16md(x) __statement({					\
+#define	__swap16md(x) ({						\
 	uint16_t __swap16md_x = (x);					\
 									\
-	__asm ("rorw $8, %w0" : "+r" (__swap16md_x));			\
+	__asm ("rorw $8, %w1" : "+r" (__swap16md_x));			\
 	__swap16md_x;							\
 })
 
@@ -58,4 +68,4 @@
 #include <sys/types.h>
 #include <sys/endian.h>
 
-#endif /* _MACHINE_ENDIAN_H_ */
+#endif /* _I386_ENDIAN_H_ */

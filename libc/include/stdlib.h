@@ -77,9 +77,17 @@ static __inline__ double atof(const char *nptr)
     return (strtod(nptr, NULL));
 }
 
-extern int abs(int) __pure2;
-extern long labs(long) __pure2;
-extern long long llabs(long long) __pure2;
+static __inline__ int abs(int __n) {
+    return (__n < 0) ? -__n : __n;
+}
+
+static __inline__ long labs(long __n) {
+    return (__n < 0L) ? -__n : __n;
+}
+
+static __inline__ long long llabs(long long __n) {
+    return (__n < 0LL) ? -__n : __n;
+}
 
 extern char * realpath(const char *path, char *resolved);
 extern int system(const char * string);

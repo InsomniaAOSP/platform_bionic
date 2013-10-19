@@ -31,7 +31,6 @@
  * SUCH DAMAGE.
  */
 
-#undef _FORTIFY_SOURCE
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>

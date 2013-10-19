@@ -29,7 +29,6 @@
 #define _BIONIC_TIME_H
 
 #include <time.h>
-#include <sys/cdefs.h>
 
 __BEGIN_DECLS
 

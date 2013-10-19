@@ -28,8 +28,8 @@
 
 #include "pthread_internal.h"
 
-#include "private/bionic_tls.h"
-#include "private/ScopedPthreadMutexLocker.h"
+#include "bionic_tls.h"
+#include "ScopedPthreadMutexLocker.h"
 
 __LIBC_HIDDEN__ pthread_internal_t* gThreadList = NULL;
 __LIBC_HIDDEN__ pthread_mutex_t gThreadListLock = PTHREAD_MUTEX_INITIALIZER;
@@ -64,5 +64,6 @@ __LIBC_ABI_PRIVATE__ void _pthread_internal_add(pthread_internal_t* thread) {
 }
 
 __LIBC_ABI_PRIVATE__ pthread_internal_t* __get_thread(void) {
-  return reinterpret_cast<pthread_internal_t*>(__get_tls()[TLS_SLOT_THREAD_ID]);
+  void** tls = reinterpret_cast<void**>(const_cast<void*>(__get_tls()));
+  return reinterpret_cast<pthread_internal_t*>(tls[TLS_SLOT_THREAD_ID]);
 }

@@ -29,13 +29,12 @@
 #ifndef _SYS_SIGNALFD_H_
 #define _SYS_SIGNALFD_H_
 
-#include <linux/signalfd.h>
 #include <signal.h>
-#include <sys/cdefs.h>
+#include <linux/signalfd.h>
 
 __BEGIN_DECLS
 
-extern int signalfd(int fd, const sigset_t* mask, int flags) __nonnull((2));
+extern int signalfd(int fd, const sigset_t* mask, int flags) __attribute__((__nonnull__(2)));
 
 __END_DECLS
 

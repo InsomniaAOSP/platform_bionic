@@ -16,9 +16,4 @@
  ***
  ****************************************************************************
  ****************************************************************************/
-#ifdef __i386__
 #include "local_32.h"
-#else
-#include "local_64.h"
-/* WARNING: DO NOT EDIT, AUTO-GENERATED CODE - SEE TOP FOR INSTRUCTIONS */
-#endif

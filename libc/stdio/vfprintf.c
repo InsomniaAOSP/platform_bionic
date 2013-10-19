@@ -451,12 +451,7 @@ reswitch:	switch (ch) {
 			goto rflag;
 #endif
 		case 'h':
-			if (*fmt == 'h') {
-				fmt++;
-				flags |= CHARINT;
-			} else {
-				flags |= SHORTINT;
-			}
+			flags |= SHORTINT;
 			goto rflag;
 		case 'j':
 			flags |= MAXINT;

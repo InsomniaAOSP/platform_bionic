@@ -49,9 +49,12 @@ extern int  unlinkat(int dirfd, const char *pathname, int flags);
 extern int  fcntl(int   fd, int   command, ...);
 extern int  creat(const char*  path, mode_t  mode);
 
-#if defined(__BIONIC_FORTIFY) && !defined(__clang__)
-__errordecl(__creat_missing_mode, "called with O_CREAT, but missing mode");
-__errordecl(__creat_too_many_args, "too many arguments");
+#if defined(__BIONIC_FORTIFY)
+
+extern void __creat_error()
+    __attribute__((__error__ ("called with O_CREAT, but missing mode")));
+extern void __too_many_args_error()
+    __attribute__((__error__ ("too many arguments")));
 extern int __open_real(const char *pathname, int flags, ...)
     __asm__(__USER_LABEL_PREFIX__ "open");
 extern int __open_2(const char *, int);
@@ -60,12 +63,12 @@ __BIONIC_FORTIFY_INLINE
 int open(const char *pathname, int flags, ...) {
     if (__builtin_constant_p(flags)) {
         if ((flags & O_CREAT) && __builtin_va_arg_pack_len() == 0) {
-            __creat_missing_mode();  // compile time error
+            __creat_error();  // compile time error
         }
     }
 
     if (__builtin_va_arg_pack_len() > 1) {
-        __creat_too_many_args();  // compile time error
+        __too_many_args_error();  // compile time error
     }
 
     if ((__builtin_va_arg_pack_len() == 0) && !__builtin_constant_p(flags)) {
@@ -83,12 +86,12 @@ __BIONIC_FORTIFY_INLINE
 int openat(int dirfd, const char *pathname, int flags, ...) {
     if (__builtin_constant_p(flags)) {
         if ((flags & O_CREAT) && __builtin_va_arg_pack_len() == 0) {
-            __creat_missing_mode();  // compile time error
+            __creat_error();  // compile time error
         }
     }
 
     if (__builtin_va_arg_pack_len() > 1) {
-        __creat_too_many_args();  // compile time error
+        __too_many_args_error();  // compile time error
     }
 
     if ((__builtin_va_arg_pack_len() == 0) && !__builtin_constant_p(flags)) {
@@ -98,7 +101,7 @@ int openat(int dirfd, const char *pathname, int flags, ...) {
     return __openat_real(dirfd, pathname, flags, __builtin_va_arg_pack());
 }
 
-#endif /* defined(__BIONIC_FORTIFY) && !defined(__clang__) */
+#endif /* defined(__BIONIC_FORTIFY) */
 
 __END_DECLS
 

@@ -34,13 +34,8 @@
 #define MAXPATHLEN  PATH_MAX
 #define MAXSYMLINKS 8
 
-#if __LP64__
-#define ALIGNBYTES 7
-#else
-#define ALIGNBYTES 3
-#endif
-
-#define ALIGN(p)    (((unsigned long)(p) + ALIGNBYTES) &~ ALIGNBYTES)
+#define ALIGNBYTES  3
+#define ALIGN(p)    (((unsigned int)(p) + ALIGNBYTES) &~ ALIGNBYTES)
 
 #define powerof2(x) ((((x)-1)&(x))==0)
 

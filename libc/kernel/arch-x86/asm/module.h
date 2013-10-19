@@ -16,9 +16,4 @@
  ***
  ****************************************************************************
  ****************************************************************************/
-#ifdef __i386__
 #include "module_32.h"
-#else
-#include "module_64.h"
-/* WARNING: DO NOT EDIT, AUTO-GENERATED CODE - SEE TOP FOR INSTRUCTIONS */
-#endif

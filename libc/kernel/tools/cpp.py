@@ -1345,11 +1345,7 @@ class CppExpr:
                 if macros[name] == kCppUndefinedMacro:
                     return ("int", 0)
                 else:
-                    try:
-                        value = int(macros[name])
-                        return ("int", value)
-                    except:
-                        return ("defined", macros[name])
+                    return ("int", 1)
 
             if kernel_remove_config_macros and name.startswith("CONFIG_"):
                 return ("int", 0)

@@ -28,7 +28,7 @@
 
 #include <pthread.h>
 
-#include "private/bionic_tls.h"
+#include "bionic_tls.h"
 #include "pthread_internal.h"
 
 /* A technical note regarding our thread-local-storage (TLS) implementation:
@@ -133,7 +133,7 @@ class ScopedTlsMapAccess {
   // from this thread's TLS area. This must call the destructor of all keys
   // that have a non-NULL data value and a non-NULL destructor.
   void CleanAll() {
-    void** tls = __get_tls();
+    void** tls = (void**)__get_tls();
 
     // Because destructors can do funky things like deleting/creating other
     // keys, we need to implement this in a loop.
@@ -212,13 +212,16 @@ int pthread_key_delete(pthread_key_t key) {
   // Clear value in all threads.
   pthread_mutex_lock(&gThreadListLock);
   for (pthread_internal_t*  t = gThreadList; t != NULL; t = t->next) {
-    // Skip zombie threads. They don't have a valid TLS area any more.
+    // Avoid zombie threads with a negative 'join_count'. These are really
+    // already dead and don't have a TLS area anymore.
+
     // Similarly, it is possible to have t->tls == NULL for threads that
     // were just recently created through pthread_create() but whose
     // startup trampoline (__thread_entry) hasn't been run yet by the
-    // scheduler. t->tls will also be NULL after a thread's stack has been
+    // scheduler. t->tls will also be NULL after it's stack has been
     // unmapped but before the ongoing pthread_join() is finished.
-    if ((t->attr.flags & PTHREAD_ATTR_FLAG_ZOMBIE) || t->tls == NULL) {
+    // so check for this too.
+    if (t->join_count < 0 || !t->tls) {
       continue;
     }
 
@@ -239,7 +242,7 @@ void* pthread_getspecific(pthread_key_t key) {
   // to check that the key is properly allocated. If the key was not
   // allocated, the value read from the TLS should always be NULL
   // due to pthread_key_delete() clearing the values for all threads.
-  return __get_tls()[key];
+  return (void *)(((unsigned *)__get_tls())[key]);
 }
 
 int pthread_setspecific(pthread_key_t key, const void* ptr) {
@@ -249,6 +252,6 @@ int pthread_setspecific(pthread_key_t key, const void* ptr) {
     return EINVAL;
   }
 
-  __get_tls()[key] = const_cast<void*>(ptr);
+  ((uint32_t *)__get_tls())[key] = (uint32_t)ptr;
   return 0;
 }

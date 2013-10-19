@@ -49,10 +49,9 @@
 #include <stdint.h>
 #include <elf.h>
 #include "atexit.h"
+#include "KernelArgumentBlock.h"
 #include "libc_init_common.h"
-
-#include "private/bionic_tls.h"
-#include "private/KernelArgumentBlock.h"
+#include <bionic_tls.h>
 
 extern "C" {
   extern void pthread_debug_init(void);
@@ -66,7 +65,7 @@ extern "C" {
 // as soon as the shared library is loaded.
 __attribute__((constructor)) static void __libc_preinit() {
   // Read the kernel argument block pointer from TLS.
-  void** tls = __get_tls();
+  void* tls = const_cast<void*>(__get_tls());
   KernelArgumentBlock** args_slot = &reinterpret_cast<KernelArgumentBlock**>(tls)[TLS_SLOT_BIONIC_PREINIT];
   KernelArgumentBlock* args = *args_slot;
 

@@ -16,9 +16,4 @@
  ***
  ****************************************************************************
  ****************************************************************************/
-#ifdef __i386__
 #include "percpu_32.h"
-#else
-#include "percpu_64.h"
-/* WARNING: DO NOT EDIT, AUTO-GENERATED CODE - SEE TOP FOR INSTRUCTIONS */
-#endif

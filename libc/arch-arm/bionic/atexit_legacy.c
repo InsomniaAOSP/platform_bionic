@@ -27,9 +27,8 @@
  */
 
 #include <sys/types.h>
+#include <private/libc_logging.h>
 #include <stdio.h>
-
-#include "private/libc_logging.h"
 
 /*
  * This source file should only be included by libc.so, its purpose is

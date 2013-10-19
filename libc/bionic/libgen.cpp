@@ -34,7 +34,7 @@
 #include <sys/cdefs.h>
 #include <sys/param.h>
 
-#include "private/ThreadLocalBuffer.h"
+#include "ThreadLocalBuffer.h"
 
 GLOBAL_INIT_THREAD_LOCAL_BUFFER(basename);
 GLOBAL_INIT_THREAD_LOCAL_BUFFER(dirname);

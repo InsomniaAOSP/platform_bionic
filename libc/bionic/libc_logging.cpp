@@ -26,8 +26,8 @@
  * SUCH DAMAGE.
  */
 
-#include "../private/libc_logging.h" // Relative path so we can #include this .cpp file for testing.
-#include "../private/ScopedPthreadMutexLocker.h"
+#include <../private/libc_logging.h> // Relative path so we can #include this .cpp file for testing.
+#include <../private/ScopedPthreadMutexLocker.h>
 
 #include <assert.h>
 #include <errno.h>
@@ -42,6 +42,7 @@
 #include <unistd.h>
 
 static pthread_mutex_t gAbortMsgLock = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t gLogInitializationLock = PTHREAD_MUTEX_INITIALIZER;
 
 __LIBC_HIDDEN__ abort_msg_t** __abort_message_ptr; // Accessible to __libc_init_common.
 
@@ -347,7 +348,7 @@ static void out_vformat(Out& o, const char* format, va_list args) {
             buffer[0] = '0';
             buffer[1] = 'x';
             format_integer(buffer + 2, sizeof(buffer) - 2, value, 'x');
-        } else if (c == 'd' || c == 'i' || c == 'o' || c == 'u' || c == 'x' || c == 'X') {
+        } else if (c == 'd' || c == 'i' || c == 'o' || c == 'x' || c == 'X') {
             /* integers - first read value from stack */
             uint64_t value;
             int is_signed = (c == 'd' || c == 'i' || c == 'o');
@@ -419,35 +420,14 @@ int __libc_format_fd(int fd, const char* format, ...) {
   return os.total;
 }
 
-static int __libc_write_stderr(const char* tag, const char* msg) {
-  int fd = TEMP_FAILURE_RETRY(open("/dev/stderr", O_CLOEXEC | O_WRONLY));
-  if (fd == -1) {
-    return -1;
-  }
-
-  iovec vec[4];
-  vec[0].iov_base = const_cast<char*>(tag);
-  vec[0].iov_len = strlen(tag);
-  vec[1].iov_base = const_cast<char*>(": ");
-  vec[1].iov_len = 2;
-  vec[2].iov_base = const_cast<char*>(msg);
-  vec[2].iov_len = strlen(msg) + 1;
-  vec[3].iov_base = const_cast<char*>("\n");
-  vec[3].iov_len = 1;
-
-  int result = TEMP_FAILURE_RETRY(writev(fd, vec, 4));
-  close(fd);
-  return result;
-}
-
 static int __libc_write_log(int priority, const char* tag, const char* msg) {
-  int main_log_fd = TEMP_FAILURE_RETRY(open("/dev/log/main", O_CLOEXEC | O_WRONLY));
+  static int main_log_fd = -1;
   if (main_log_fd == -1) {
-    if (errno == ENOTDIR) {
-      // /dev/log isn't a directory? Maybe we're running on the host? Try stderr instead.
-      return __libc_write_stderr(tag, msg);
+    ScopedPthreadMutexLocker locker(&gLogInitializationLock);
+    main_log_fd = TEMP_FAILURE_RETRY(open("/dev/log/main", O_CLOEXEC | O_WRONLY));
+    if (main_log_fd == -1) {
+      return -1;
     }
-    return -1;
   }
 
   iovec vec[3];
@@ -458,9 +438,7 @@ static int __libc_write_log(int priority, const char* tag, const char* msg) {
   vec[2].iov_base = const_cast<char*>(msg);
   vec[2].iov_len = strlen(msg) + 1;
 
-  int result = TEMP_FAILURE_RETRY(writev(main_log_fd, vec, 3));
-  close(main_log_fd);
-  return result;
+  return TEMP_FAILURE_RETRY(writev(main_log_fd, vec, 3));
 }
 
 int __libc_format_log_va_list(int priority, const char* tag, const char* format, va_list args) {
@@ -487,13 +465,12 @@ static int __libc_android_log_event(int32_t tag, char type, const void* payload,
   vec[2].iov_base = const_cast<void*>(payload);
   vec[2].iov_len = len;
 
-  int event_log_fd = TEMP_FAILURE_RETRY(open("/dev/log/events", O_CLOEXEC | O_WRONLY));
+  static int event_log_fd = -1;
   if (event_log_fd == -1) {
-    return -1;
+    ScopedPthreadMutexLocker locker(&gLogInitializationLock);
+    event_log_fd = TEMP_FAILURE_RETRY(open("/dev/log/events", O_CLOEXEC | O_WRONLY));
   }
-  int result = TEMP_FAILURE_RETRY(writev(event_log_fd, vec, 3));
-  close(event_log_fd);
-  return result;
+  return TEMP_FAILURE_RETRY(writev(event_log_fd, vec, 3));
 }
 
 void __libc_android_log_event_int(int32_t tag, int value) {
@@ -511,10 +488,13 @@ void __fortify_chk_fail(const char *msg, uint32_t tag) {
   __libc_fatal("FORTIFY_SOURCE: %s. Calling abort().", msg);
 }
 
-static void __libc_fatal(const char* format, va_list args) {
+void __libc_fatal(const char* format, ...) {
   char msg[1024];
   BufferOutputStream os(msg, sizeof(msg));
+  va_list args;
+  va_start(args, format);
   out_vformat(os, format, args);
+  va_end(args);
 
   // TODO: log to stderr for the benefit of "adb shell" users.
 
@@ -522,20 +502,7 @@ static void __libc_fatal(const char* format, va_list args) {
   __libc_write_log(ANDROID_LOG_FATAL, "libc", msg);
 
   __libc_set_abort_message(msg);
-}
 
-void __libc_fatal_no_abort(const char* format, ...) {
-  va_list args;
-  va_start(args, format);
-  __libc_fatal(format, args);
-  va_end(args);
-}
-
-void __libc_fatal(const char* format, ...) {
-  va_list args;
-  va_start(args, format);
-  __libc_fatal(format, args);
-  va_end(args);
   abort();
 }
 

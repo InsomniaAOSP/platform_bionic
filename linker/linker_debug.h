@@ -29,6 +29,8 @@
 #ifndef _LINKER_DEBUG_H_
 #define _LINKER_DEBUG_H_
 
+#include <stdio.h>
+
 // You can increase the verbosity of debug traces by defining the LD_DEBUG
 // environment variable to a numeric value from 0 to 2 (corresponding to
 // INFO, TRACE, and DEBUG calls in the source). This will only
@@ -52,6 +54,9 @@
  *
  * To enable/disable specific debug options, change the defines above
  *********************************************************************/
+
+
+/*********************************************************************/
 
 #include "private/libc_logging.h"
 
